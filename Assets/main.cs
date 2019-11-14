@@ -55,7 +55,6 @@ public class main : MonoBehaviour
 
         //// display score
         //scoreText.text = "Score: " + score.ToString();
-
         
 
     }
@@ -67,10 +66,13 @@ public class main : MonoBehaviour
         values = new GameObject[size];
         //make event triggerKey
         EventTrigger[] eventTriggerKey = new EventTrigger[size];
-        // make entryKey1
-        EventTrigger.Entry[] entryKey1 = new EventTrigger.Entry[size];
-        // make entryKey2
-        EventTrigger.Entry[] entryKey2 = new EventTrigger.Entry[size];
+        // make beginDrag
+        EventTrigger.Entry[] beginDrag = new EventTrigger.Entry[size];
+        // make drag
+        EventTrigger.Entry[] drag = new EventTrigger.Entry[size];
+        //make ondrop
+        EventTrigger.Entry[] endDrag = new EventTrigger.Entry[size];
+
         //make event triggerValue
         EventTrigger[] eventTriggerValue = new EventTrigger[size];
         //make entryValue1
@@ -78,35 +80,10 @@ public class main : MonoBehaviour
         //make entryValue1
         EventTrigger.Entry[] entryValue2 = new EventTrigger.Entry[size];
 
-        //clone the button
-        for (int i = 0; i < size; i++)
-        {
-            //keys
-            keys[i] = Instantiate(key) as GameObject;
-            keys[i].transform.SetParent(canvas.transform, false);
-            keys[i].transform.position = new Vector3(Screen.width / 4, Screen.height / (size + 1) + i * (Screen.height / (size + 1)), 0);
-            //add event trigger
-            eventTriggerKey[i] = keys[i].AddComponent<EventTrigger>();
-            //make entreKey1
-            entryKey1[i] = new EventTrigger.Entry();
-            entryKey1[i].eventID = EventTriggerType.PointerDown;
-            
-            //make a copy of obj, if we don't use it, it doesn't work
-            GameObject copy = keys[i];
-            entryKey1[i].callback.AddListener((data) => { keyDown(copy); });
-            eventTriggerKey[i].triggers.Add(entryKey1[i]);
+        //
+     
 
-            //make entreKey2
-            entryKey2[i] = new EventTrigger.Entry();
-            entryKey2[i].eventID = EventTriggerType.PointerUp;
-            //make a copy of obj, if we don't use it, it doesn't work
-            GameObject copy3 = keys[i];
-            entryKey2[i].callback.AddListener((data) => { keyUp(copy3); });
-            eventTriggerKey[i].triggers.Add(entryKey2[i]);
-
-
-            
-        }
+        // clone value
         for (int i = 0; i < size; i++)
         {
             //values
@@ -115,12 +92,19 @@ public class main : MonoBehaviour
             values[i].transform.position = new Vector3(Screen.width * 3 / 4, Screen.height / (size + 1) + i * (Screen.height / (size + 1)), 0);
             //add event trigger
             eventTriggerValue[i] = values[i].AddComponent<EventTrigger>();
+
+            //
+
+            
+
             //pointer exit
             entryValue1[i] = new EventTrigger.Entry();
-            entryValue1[i].eventID = EventTriggerType.PointerExit;
+            entryValue1[i].eventID = EventTriggerType.PointerEnter;
             GameObject copy2 = values[i];
             entryValue1[i].callback.AddListener((data) => { valueExit(copy2); });
             eventTriggerValue[i].triggers.Add(entryValue1[i]);
+
+
             //pointer Enter
             entryValue2[i] = new EventTrigger.Entry();
             entryValue2[i].eventID = EventTriggerType.PointerEnter;
@@ -129,11 +113,52 @@ public class main : MonoBehaviour
             eventTriggerValue[i].triggers.Add(entryValue2[i]);
         }
 
+        //clone keys
+        for (int i = 0; i < size; i++)
+        {
+            //keys
+            keys[i] = Instantiate(key) as GameObject;
+            keys[i].transform.SetParent(canvas.transform, false);
+            keys[i].transform.position = new Vector3(Screen.width / 4, Screen.height / (size + 1) + i * (Screen.height / (size + 1)), 0);
+            
+            
+            //add event trigger
+            eventTriggerKey[i] = keys[i].AddComponent<EventTrigger>();
+            
+            //make beginDrag
+            beginDrag[i] = new EventTrigger.Entry();
+            beginDrag[i].eventID = EventTriggerType.BeginDrag;
+            //make a copy of obj, if we don't use it, it doesn't work
+            GameObject copy1 = keys[i];
+            beginDrag[i].callback.AddListener((data) => { onBeginDrag(copy1); });
+            eventTriggerKey[i].triggers.Add(beginDrag[i]);
 
+            //make drag
+            drag[i] = new EventTrigger.Entry();
+            drag[i].eventID = EventTriggerType.Drag;
+            //make a copy of obj, if we don't use it, it doesn't work
+            GameObject copy2 = keys[i];
+            drag[i].callback.AddListener((data) => { onDrag(copy2); });
+            eventTriggerKey[i].triggers.Add(drag[i]);
+
+            //make endDrag
+            endDrag[i] = new EventTrigger.Entry();
+            endDrag[i].eventID = EventTriggerType.EndDrag;
+            //make a copy of obj, if we don't use it, it doesn't work
+            GameObject copy3 = keys[i];
+            endDrag[i].callback.AddListener((data) => { onDrop(copy3); });
+            eventTriggerKey[i].triggers.Add(endDrag[i]);
 
 
 
         }
+
+        //CanvasGroup.blocksRaycast = false;
+
+
+
+
+    }
 
 
 
@@ -144,10 +169,15 @@ public class main : MonoBehaviour
     GameObject valueObj;
     Vector3 oriPos;
     //if in drag
-    bool onDrag = false;
+    //bool onDrag = false;
     bool answer = false;
     //all event function
-    private void keyDown(GameObject obj)
+    private void onDrag(GameObject obj)
+    {
+        obj.GetComponent<Button>().transform.position = Input.mousePosition;
+        
+    }
+    private void onBeginDrag(GameObject obj)
     {
         if (isVisited[obj.GetComponentInChildren<Text>().text] == false)
         {
@@ -155,60 +185,80 @@ public class main : MonoBehaviour
             //update dragObj, oriPos, drag
             dragObj = obj;
             oriPos = obj.GetComponent<Button>().transform.position;
-            onDrag = true;
         }
     }
-    private void keyUp(GameObject obj)
+    private void onDrop(GameObject obj)
     {
-        Debug.Log("keyUp");
-        onDrag = false;
-        tempKey = "";
-        tempValue = "";
-        Debug.Log(answer);
-        if (!answer)
-        {
-            obj.GetComponent<Button>().transform.position = oriPos;
-            
-        }
-        else
-        {
-            Vector3 tempPos = valueObj.GetComponent<Button>().transform.position;
-            Debug.Log(tempPos);
-            tempPos.x = tempPos.x -100;
-            Debug.Log(tempPos);
-            obj.GetComponent<Button>().transform.position = tempPos;
-            isVisited[dragObj.GetComponentInChildren<Text>().text] = true;
-            answer = false;
-            StartCoroutine(printWinText());
+        obj.GetComponent<Button>().transform.position = oriPos;
+    }
+    //private void keyDown(GameObject obj)
+    //{
+
+    //    if (isVisited[obj.GetComponentInChildren<Text>().text] == false)
+    //    {
+    //        tempKey = obj.GetComponentInChildren<Text>().text;
+    //        //update dragObj, oriPos, drag
+    //        dragObj = obj;
+    //        oriPos = obj.GetComponent<Button>().transform.position;
+    //        onDrag = true;
+    //    }
+    //}
+    //private void keyUp(GameObject obj)
+    //{
+    //    Debug.Log("keyUp");
+    //    onDrag = false;
+    //    tempKey = "";
+    //    tempValue = "";
+    //    Debug.Log(answer);
+    //    if (!answer)
+    //    {
+    //        obj.GetComponent<Button>().transform.position = oriPos;
+
+    //    }
+    //    else
+    //    {
+    //        Vector3 tempPos = valueObj.GetComponent<Button>().transform.position;
+    //        Debug.Log(tempPos);
+    //        tempPos.x = tempPos.x -100;
+    //        Debug.Log(tempPos);
+    //        obj.GetComponent<Button>().transform.position = tempPos;
+    //        isVisited[dragObj.GetComponentInChildren<Text>().text] = true;
+    //        answer = false;
+    //        StartCoroutine(printWinText());
 
 
 
-        }
+    //    }
+    //}
+    public void OnTriggerEnter2D(Collider2D col)
+    {
+        Debug.Log("Trigger");
     }
     private void valueExit(GameObject obj)
     {
-        Debug.Log("valueUp");
-        tempValue = "";
-        
+
+        Debug.Log("OnPointerEnter");
+        //tempValue = "";
+
     }
     private void valueEnter(GameObject obj)
     {
-        Debug.Log("enter");
-        if(onDrag)
-        {
-            tempValue = obj.GetComponentInChildren<Text>().text;
-            if (this.gameObject.GetComponent<data>().checkData(tempKey, tempValue))
-            {
-                Debug.Log("true");
-                answer = true;
-                valueObj = obj;
-            }
-            else
-            {
-                Debug.Log("false");
-                answer = false;
-            }
-        }
+        //Debug.Log("enter");
+        //if (onDrag)
+        //{
+        //    tempValue = obj.GetComponentInChildren<Text>().text;
+        //    if (this.gameObject.GetComponent<data>().checkData(tempKey, tempValue))
+        //    {
+        //        Debug.Log("true");
+        //        answer = true;
+        //        valueObj = obj;
+        //    }
+        //    else
+        //    {
+        //        Debug.Log("false");
+        //        answer = false;
+        //    }
+        //}
     }
 
     //to make a randdom array
@@ -344,10 +394,7 @@ public class main : MonoBehaviour
     void Update()
     {
         //update position to drag
-        if (onDrag)
-        {
-            dragObj.GetComponent<Button>().transform.position = Input.mousePosition;
-        }
+       
     }
     
 
